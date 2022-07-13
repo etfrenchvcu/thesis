@@ -9,11 +9,12 @@ DICTIONARY=${DATA_DIR}/dev_dictionary.txt
 
 start_time="$(date -u +%s)"
 python predict.py \
-    --candidates 1 \
+    --candidates 5 \
+    --contextualized 1 \
     --data_dir ${EVAL_DIR} \
     --dictionary_path ${DICTIONARY} \
     --device "mps" \
-    --max_length 25 \
+    --max_length 300 \
     --model_name_or_path ${MODEL_NAME_OR_PATH} \
     --output_dir ${OUTPUT_DIR} \
     --umls_path ./umls/processed/

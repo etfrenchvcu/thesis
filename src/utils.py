@@ -26,14 +26,80 @@ def bulk_embed(names, tokenizer, encoder, max_length, device, show_progress=True
         embeds.append(batch_embeds)
     return np.concatenate(embeds, axis=0)
 
-def get_topk_candidates(dict_names, mention_names, tokenizer, encoder, max_length, device, topk, show_progress=True):
+def bulk_embed_contextualized(mentions, encoder, tokenizer, doc_dir, max_length, device, show_progress=True):
+    embeddings = []
+    for file in tqdm(sorted(set(mentions[:,3])), disable=not show_progress, desc='Bulk embedding contextualized...'):
+        # Tokenize entire document
+        with open(f'{doc_dir}/{file}.txt') as f:
+            doc = f.read()
+            doc_tokens = tokenizer(doc.split('\n'), padding="max_length", max_length=max_length, truncation=True, return_tensors="pt", return_offsets_mapping=True)
+            
+        # Remove offset_mapping from tokenization for formatting prior to encoding
+        offsets = doc_tokens.pop('offset_mapping')
+        
+        # Find the offset for the end of each sentence
+        sentence_lengths = torch.max(offsets,dim=1).values[:,1]
+        
+        # Update offsets tensor to be document-level token offsets instead of sentence-level
+        sentence_offsets = np.zeros(len(sentence_lengths))
+        for i,l in enumerate(sentence_lengths[:-1], start=1):
+            sentence_offsets[i] = l + sentence_offsets[i-1] + 1
+        offsets = torch.IntTensor(offsets.numpy() + sentence_offsets[:,None,None])
+        
+        # Reshape to remove sentence dimension from tensors
+        offsets = offsets.reshape(-1,2)
+        
+        # Get character-level mention offsets from annotation file
+        file_mask = mentions[:,3]==file
+        mention_offsets = mentions[:,2][file_mask]
+        mention_offsets = torch.IntTensor([list(map(int,l.split('|'))) for l in mention_offsets])
+        
+        # Create a padding_mask to ignore padding in tensors
+        # Padding offsets are formated [###, ###] where ### are equal numbers
+        padding_mask = (offsets[:,0]!=offsets[:,1]).unsqueeze(1)
+
+        # Find the indexes corresponding to mentions in the tokens.input_ids (results of BERT tokenization)
+        # offsets==offset finds all offsets ([start,end]) matching the start OR end of a given offset
+        # padding_mask ignores indexes for padding
+        token_ixs = [((offsets==offset) & padding_mask).nonzero(as_tuple=True)[0] for offset in mention_offsets]
+        
+        with torch.no_grad():
+            # Encode each sentence within doc
+            doc_tokens = doc_tokens.to(device)
+            outputs = encoder(**doc_tokens)
+            
+            # Flatten sentence dimension
+            embedding = outputs[0].view(-1,768)
+            
+            # Average embeddings for all tokens in each mention; torch.Size([|mentions|, 768])
+            doc_embeds = torch.stack([embedding[s.item():e.item()+1].mean(0) for s,e in token_ixs])
+            
+            # Append doc embeddings to output
+            doc_embeds = doc_embeds.cpu().detach().numpy()
+            embeddings.append(doc_embeds)
+            
+            # Print mention tokens to verify correct indexes
+            # input_ids = doc_tokens['input_ids'].reshape(-1)
+            # for s,e in token_ixs[:5]:
+            #     s = s.item()
+            #     e = e.item()+1
+            #     print(s,e, tokenizer.convert_ids_to_tokens(input_ids[s:e]))
+            
+    # Concatenate embeddings from all mentions
+    return np.concatenate(embeddings, axis=0)
+
+def get_topk_candidates(dict_names, mentions, tokenizer, encoder, max_length, device, topk, show_progress=True, doc_dir=None):
     "Encodes dictionary and mention names, computes similarity, and returns topk candidates for each mention"
     # Create initial embeddings to identify candidates out of entire dictionary
     dict_embeds = bulk_embed(names=dict_names, tokenizer=tokenizer, encoder=encoder, max_length=max_length, device=device, show_progress=show_progress)
-    query_embeds = bulk_embed(names=mention_names, tokenizer=tokenizer, encoder=encoder, max_length=max_length, device=device, show_progress=show_progress)
+    
+    if doc_dir is not None:
+        mention_embeds = bulk_embed_contextualized(mentions=mentions, encoder=encoder, tokenizer=tokenizer, doc_dir=doc_dir, max_length=max_length, device=device)
+    else:
+        mention_embeds = bulk_embed(names=list(mentions[:,0]), tokenizer=tokenizer, encoder=encoder, max_length=max_length, device=device, show_progress=show_progress)
 
     # Matrix multiply and numpy magic to get top K similar candidates
-    score_matrix = np.matmul(query_embeds, dict_embeds.T)
+    score_matrix = np.matmul(mention_embeds, dict_embeds.T)
     candidate_idxs = retrieve_candidates(score_matrix, topk)
     return candidate_idxs
 

@@ -17,7 +17,7 @@ def parse_args():
     "Parse input arguments"
     parser = argparse.ArgumentParser(description='Biomedical Entity Linker')
     parser.add_argument('--candidates',  type=int, default=5)
-    parser.add_argument('--contextualized', action="store_true", help="use contextualized embeddings in candidate selection")
+    parser.add_argument('--contextualized', type=int, default=0, help="use contextualized embeddings in candidate selection")
     parser.add_argument('--data_dir', type=str, required=True, help='data set to evaluate')
     parser.add_argument('--dictionary_path', type=str, required=True, help='dictionary path')
     parser.add_argument('--device', type=str, default='cuda')
@@ -46,15 +46,19 @@ def main(args):
     mentions = utils.load_mentions(args.data_dir)
     LOGGER.info("Mentions loaded")
     
+    # Add context to embeddings
+    doc_dir = args.data_dir if args.contextualized==1 else None
+    
     # Predict topk candidates
     candidate_idxs = utils.get_topk_candidates(
             dict_names=list(dictionary[:,0]), 
-            mention_names=list(mentions[:,0]), 
+            mentions=mentions, 
             tokenizer=tokenizer, 
             encoder=bert, 
             max_length=args.max_length, 
             device=args.device, 
-            topk=args.candidates)
+            topk=args.candidates,
+            doc_dir=doc_dir)
     
     # Log performance on dev after each epoch
     results = utils.evaluate(mentions, dictionary[candidate_idxs], umls)
