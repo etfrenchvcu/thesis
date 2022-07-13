@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import time
 import torch
 from transformers import (
     AutoModel,
@@ -30,6 +31,7 @@ def parse_args():
 
 def main(args):
     # Initialize
+    start = time.time()
     LOGGER = utils.init_logging()
     LOGGER.info(args)
     bert = AutoModel.from_pretrained(args.model_name_or_path).to(args.device)
@@ -65,6 +67,8 @@ def main(args):
     if 'acc1' in results: LOGGER.info("Result: acc@1={}".format(results['acc1']))
     if 'acc5' in results: LOGGER.info("Result: acc@5={}".format(results['acc5']))
     if 'umls_similarity' in results: LOGGER.info("Result: umls_similarity={}".format(results['umls_similarity']))
+    
+    LOGGER.info('Prediction time: ' + utils.format_time(start,time.time()))
 
     # Write output
     if not os.path.exists(args.output_dir):

@@ -4,19 +4,24 @@
 MODEL_NAME_OR_PATH=dmis-lab/biobert-v1.1
 OUTPUT_DIR=./tmp/local
 DATA_DIR=./datasets/development
-EVAL_DIR=${DATA_DIR}/processed_dev
+TRAIN_DIR=${DATA_DIR}/processed_dev
+DEV_DIR=${DATA_DIR}/processed_dev
 DICTIONARY=${DATA_DIR}/dev_dictionary.txt
 
 start_time="$(date -u +%s)"
-python predict.py \
-    --candidates 5 \
+PYTORCH_ENABLE_MPS_FALLBACK=1 python train.py \
+    --batch_size 16 \
+    --candidates 20 \
     --contextualized 0 \
-    --data_dir ${EVAL_DIR} \
-    --dictionary_path ${DICTIONARY} \
+    --dev_dir ${DEV_DIR} \
     --device "mps" \
-    --max_length 300 \
+    --dictionary_path ${DICTIONARY} \
+    --epochs 1 \
+    --loss_fn "nll" \
+    --max_length 25 \
     --model_name_or_path ${MODEL_NAME_OR_PATH} \
     --output_dir ${OUTPUT_DIR} \
+    --train_dir ${TRAIN_DIR} \
     --umls_path ./umls/processed/
 end_time="$(date -u +%s)"
 elapsed="$(($end_time-$start_time))"

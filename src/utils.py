@@ -255,3 +255,12 @@ def evaluate(eval_mentions, candidates, umls=None):
         
     return results
 #endregion
+
+#region Helpers
+def format_time(start, end):
+    time = end-start
+    hour = int(time/60/60)
+    minute = int(time/60 % 60)
+    second = int(time % 60)
+    return "{} hours {} minutes {} seconds".format(hour, minute, second)
+#endregion

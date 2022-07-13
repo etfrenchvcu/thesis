@@ -9,13 +9,10 @@ LOGGER = logging.getLogger(__name__)
 
 
 class RerankNet(nn.Module):
-    def __init__(self, encoder, device, max_length, topk, batch_size, loss_fn):
+    def __init__(self, encoder, device, loss_fn):
         super(RerankNet, self).__init__()
         self.encoder = encoder
         self.device = device
-        self.max_length = max_length
-        self.topk = topk
-        self.batch_size = batch_size
         
         self.optimizer = AdamW(encoder.parameters(), lr=1e-5)
         
@@ -30,6 +27,7 @@ class RerankNet(nn.Module):
         """
         # Split input into mentions and candidates
         mention_tokens, candidate_tokens = x
+        batch_size, candidates, max_length = candidate_tokens.input_ids.shape
         
         # Embed mentions
         mention_tokens = mention_tokens.to(self.device)
@@ -43,11 +41,11 @@ class RerankNet(nn.Module):
         # Embed candidate names
         candidate_tokens = candidate_tokens.to(self.device)
         candidate_embeds = self.encoder(
-                    input_ids=candidate_tokens['input_ids'].reshape(-1, self.max_length),
-                    token_type_ids=candidate_tokens['token_type_ids'].reshape(-1, self.max_length),
-                    attention_mask=candidate_tokens['attention_mask'].reshape(-1, self.max_length)
+                    input_ids=candidate_tokens['input_ids'].reshape(-1, max_length),
+                    token_type_ids=candidate_tokens['token_type_ids'].reshape(-1, max_length),
+                    attention_mask=candidate_tokens['attention_mask'].reshape(-1, max_length)
         )
-        candidate_embeds = candidate_embeds[0][:,0].reshape(self.batch_size, self.topk, -1) # [batch_size, topk, hidden]
+        candidate_embeds = candidate_embeds[0][:,0].reshape(batch_size, candidates, -1) # [batch_size, candidates, hidden]
 
         # Matrix multiply embeddings to score candidates
         return torch.bmm(mention_embeds, candidate_embeds.permute(0,2,1)).squeeze(1)
