@@ -8,7 +8,7 @@ from tqdm import tqdm
 from transformers import default_data_collator
 
 # Local modules
-from namesDataset import NamesDataset
+from src.namesDataset import NamesDataset
 
 def bulk_embed(names, tokenizer, encoder, max_length, device, show_progress=True):
     "Creates BERT embeddings for a bulk list of mention or dictionary names"

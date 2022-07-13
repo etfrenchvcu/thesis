@@ -8,10 +8,10 @@ from transformers import (
 )
 
 # Local modules
-from candidateDataset import CandidateDataset
-from rerankNet import RerankNet
-from umls import Umls
-import utils
+from src.candidateDataset import CandidateDataset
+from src.rerankNet import RerankNet
+from src.umls import Umls
+import src.utils as utils
 
 def parse_args():
     "Parse input arguments"
