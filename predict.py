@@ -34,6 +34,7 @@ def main(args):
     start = time.time()
     LOGGER = utils.init_logging()
     LOGGER.info(args)
+    utils.init_seed(42)
     bert = AutoModel.from_pretrained(args.model_name_or_path).to(args.device)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
 

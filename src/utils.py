@@ -63,6 +63,21 @@ def bulk_embed_contextualized(mentions, encoder, tokenizer, doc_dir, max_length,
         # padding_mask ignores indexes for padding
         token_ixs = [((offsets==offset) & padding_mask).nonzero(as_tuple=True)[0] for offset in mention_offsets]
         
+        # If offsets do not match tokens, we have to go in and fix them. Unfortunately, this does happen
+        if sum([len(ixs)!=2 for ixs in token_ixs]):
+            print(f"Bad annotation in {file}")
+            for i, ixs in enumerate(token_ixs):
+                if len(ixs)!=2:
+                    print(i, ixs)
+                    char_start, char_end = mention_offsets[i][0].item(),mention_offsets[i][1].item()
+                    char_start = max(offsets[:,0][offsets[:,0]<=char_start])
+                    char_end = min(offsets[:,1][offsets[:,1]>=char_end])
+                    offset = torch.stack([char_start, char_end])
+                    token_ixs[i] = ((offsets==offset) & padding_mask).nonzero(as_tuple=True)[0]
+        
+        # Check all annotations were fixed
+        assert(sum([len(ixs)!=2 for ixs in token_ixs]), f"Offsets not lining up for mention in {file}")
+        
         with torch.no_grad():
             # Encode each sentence within doc
             doc_tokens = doc_tokens.to(device)
