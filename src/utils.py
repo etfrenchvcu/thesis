@@ -91,7 +91,7 @@ def bulk_embed_contextualized(mentions, encoder, tokenizer, doc_dir, max_length,
 def get_topk_candidates(dict_names, mentions, tokenizer, encoder, max_length, device, topk, show_progress=True, doc_dir=None):
     "Encodes dictionary and mention names, computes similarity, and returns topk candidates for each mention"
     # Create initial embeddings to identify candidates out of entire dictionary
-    dict_embeds = bulk_embed(names=dict_names, tokenizer=tokenizer, encoder=encoder, max_length=max_length, device=device, show_progress=show_progress)
+    dict_embeds = bulk_embed(names=dict_names, tokenizer=tokenizer, encoder=encoder, max_length=25, device=device, show_progress=show_progress) # Limit dictionary embedding size to avoid memory overrun
     
     if doc_dir is not None:
         mention_embeds = bulk_embed_contextualized(mentions=mentions, encoder=encoder, tokenizer=tokenizer, doc_dir=doc_dir, max_length=max_length, device=device)
@@ -184,8 +184,7 @@ def marginal_nll(score, target):
     predict = torch.nn.functional.softmax(score, dim=-1)
     loss = predict * target
     loss = loss.sum(dim=-1)                   # sum all positive scores
-    #TODO: this breaks on the mac, but maybe bring back
-    # loss = loss[loss > 0]                     # filter sets with at least one positives
+    loss = loss[loss > 0]                     # filter sets with at least one positives
     loss = torch.clamp(loss, min=1e-9, max=1) # for numerical stability
     loss = -torch.log(loss)                   # for negative log likelihood
     if len(loss) == 0:
