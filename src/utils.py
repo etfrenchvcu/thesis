@@ -31,19 +31,19 @@ def bulk_embed_contextualized(mentions, encoder, tokenizer, doc_dir, max_length,
     for file in tqdm(sorted(set(mentions[:,3])), disable=not show_progress, desc='Bulk embedding contextualized...'):
         # Tokenize entire document
         with open(f'{doc_dir}/{file}.txt') as f:
-            doc = f.read()
-            doc_tokens = tokenizer(doc.split('\n'), padding="max_length", max_length=max_length, truncation=True, return_tensors="pt", return_offsets_mapping=True)
+            doc = f.readlines()
+            doc_tokens = tokenizer(doc, padding="max_length", max_length=max_length, truncation=True, return_tensors="pt", return_offsets_mapping=True)
             
         # Remove offset_mapping from tokenization for formatting prior to encoding
         offsets = doc_tokens.pop('offset_mapping')
         
         # Find the offset for the end of each sentence
-        sentence_lengths = torch.max(offsets,dim=1).values[:,1]
+        sentence_lengths = [len(line) for line in doc]
         
         # Update offsets tensor to be document-level token offsets instead of sentence-level
         sentence_offsets = np.zeros(len(sentence_lengths))
         for i,l in enumerate(sentence_lengths[:-1], start=1):
-            sentence_offsets[i] = l + sentence_offsets[i-1] + 1
+            sentence_offsets[i] = l + sentence_offsets[i-1]
         offsets = torch.IntTensor(offsets.numpy() + sentence_offsets[:,None,None])
         
         # Reshape to remove sentence dimension from tensors
