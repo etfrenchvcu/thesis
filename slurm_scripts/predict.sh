@@ -12,12 +12,14 @@
 MODEL_NAME_OR_PATH=$1
 CONTEXTUALIZED=$2
 MAX_LENGTH=$3
+EXPERIMENT=$4
 
-OUTPUT_DIR=./tmp
-DATA_DIR=./datasets/datasets/n2c2
+OUTPUT_DIR=./tmp/${EXPERIMENT}
+DATA_DIR=./datasets/n2c2
 EVAL_DIR=${DATA_DIR}/processed_test
 DICTIONARY=${DATA_DIR}/mrconso_dictionary.txt
 
+echo experiment ${EXPERIMENT}
 echo model ${MODEL_NAME_OR_PATH}
 echo contextualized ${CONTEXTUALIZED}
 echo max_length ${MAX_LENGTH}
