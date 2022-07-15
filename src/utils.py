@@ -157,13 +157,22 @@ def marginal_nll(score, target):
     return loss
 
 def mse_loss(score, target):
-    "Calculates MSE loss between max similarity of the candidates and similarity of top prediction"
-    # Find similarity of the top prediction
-    pred_ixs = score.argmax(dim=1)
-    predicted_similarity = torch.gather(target, 1, pred_ixs.unsqueeze_(dim=1)).squeeze().requires_grad_()
+    """
+    Calculates MSE loss between max similarity of the candidates and similarity of top prediction.
 
-    # Find max similarity for each mention of the available candidates
+    Inputs:
+        score: torch.Size([<mentions>, <candidates>]) Float tensor resulting from matrix multiplication of mention and dictionary embeddings
+        target: torch.Size([<mentions>, <candidates>]) Similarity score (0,1] between candidates and gold CUIs for each mention.
+    """
+    # Find the similarity score between the top prediction and gold CUI for each mention
+    # NOTE: This decouples the output of nn.forward() from the loss tensor returned. Are gradients stored on the outputs or on the model itself?
+    pred_ixs = score.argmax(dim=1)
+    predicted_similarity = torch.gather(target, 1, pred_ixs.unsqueeze_(dim=1)).squeeze().requires_grad_() 
+
+    # Find max similarity score for each mention of the available candidates
     expected_similarity = torch.max(target, dim=1).values
+
+    # Calculate MSE between the similarity score from the top prediction and the highest candidate similarity
     return torch.nn.functional.mse_loss(expected_similarity, predicted_similarity)
 
 def mse5_loss(score, target):

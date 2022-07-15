@@ -2,7 +2,6 @@ import argparse
 import json
 import os
 import time
-import torch
 from transformers import (
     AutoModel,
     AutoTokenizer
