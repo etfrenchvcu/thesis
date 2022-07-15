@@ -24,7 +24,7 @@ class RerankNet(nn.Module):
         """
         # Split input into mentions and candidates
         mention_tokens, candidate_tokens = x
-        batch_size, candidates, max_length = candidate_tokens.input_ids.shape
+        batch_size, candidates, max_length = candidate_tokens['input_ids'].shape
         
         # Embed mentions
         mention_tokens = mention_tokens.to(self.device)
