@@ -59,3 +59,8 @@ class CandidateDataset(torch.utils.data.Dataset):
     def log_similarity(self, gold_cui, candidate_cuis):
         dist = self.umls.dist(gold_cui, candidate_cuis)
         return 1 / math.exp(dist)
+    
+    def max_acc1(self):
+        "Given the current candidate_ixs, returns the highest possible acc@1"
+        has_gold_candidate = [int((self.gold_cuis[i]==self.dict_cuis[self.candidate_idxs[i]]).any()) for i in range(len(self.gold_cuis))]
+        return np.array(has_gold_candidate).mean()

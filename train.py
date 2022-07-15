@@ -92,6 +92,7 @@ def main(args):
                             
         # Add candidates to training dataset
         train_set.set_candidate_idxs(train_candidate_idxs)
+        LOGGER.info('Epoch {}: max possible acc@1 = {}'.format(epoch,train_set.max_acc1()))
         
         ###################### Train ######################
         # Train encoder to properly rank candidates
