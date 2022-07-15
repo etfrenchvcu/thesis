@@ -59,7 +59,7 @@ def main(args):
         raise Exception(f"Invalid loss function {args.loss_fn}")
         
     # Build model
-    model = RerankNet(bert, device = args.device)
+    model = RerankNet(encoder=bert, tokenizer=tokenizer, device=args.device)
     
     # Load UMLS data
     umls = Umls('umls/processed')
@@ -71,7 +71,7 @@ def main(args):
 
     # Load training data
     train_mentions = utils.load_mentions(args.train_dir)
-    train_set = CandidateDataset(train_mentions, dictionary, tokenizer, args.max_length, args.candidates, args.similarity_type, umls) 
+    train_set = CandidateDataset(train_mentions, dictionary, model.tokenizer, args.max_length, args.candidates, args.similarity_type, umls) 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
 
     # Load dev data for validation
@@ -84,8 +84,8 @@ def main(args):
         train_candidate_idxs = utils.get_topk_candidates(
                 dict_names=list(dictionary[:,0]), 
                 mentions=train_mentions, 
-                tokenizer=tokenizer, 
-                encoder=bert, 
+                tokenizer=model.tokenizer, 
+                encoder=model.encoder, 
                 max_length=args.max_length, 
                 device=args.device, 
                 topk=args.candidates)
@@ -117,8 +117,8 @@ def main(args):
         dev_candidate_idxs = utils.get_topk_candidates(
                 dict_names=list(dictionary[:,0]), 
                 mentions=dev_mentions, 
-                tokenizer=tokenizer, 
-                encoder=bert, 
+                tokenizer=model.tokenizer, 
+                encoder=model.encoder, 
                 max_length=args.max_length, 
                 device=args.device, 
                 topk=5) # Only need top five candidates to evaluate performance
@@ -130,11 +130,7 @@ def main(args):
         if 'umls_similarity' in results: LOGGER.info("Epoch {}: umls_similarity={}".format(epoch,results['umls_similarity']))
 
         # Dump model after each training epoch
-        checkpoint_dir = os.path.join(args.output_dir, "checkpoint_{}".format(epoch))
-        if not os.path.exists(checkpoint_dir):
-            os.makedirs(checkpoint_dir)
-        bert.save_pretrained(checkpoint_dir)
-        tokenizer.save_pretrained(checkpoint_dir)
+        model.dump(args.output_dir, epoch)
         
     LOGGER.info('Training time: ' + utils.format_time(start,time.time()))
     

@@ -1,13 +1,16 @@
+import os
 import torch
 from tqdm import tqdm
 from transformers import AdamW
 
 
 class RerankNet(torch.nn.Module):
-    def __init__(self, encoder, device):
+    def __init__(self, encoder, tokenizer, device):
         super(RerankNet, self).__init__()
         self.encoder = encoder
         self.device = device
+        self.tokenizer = tokenizer
+        
         self.optimizer = AdamW(encoder.parameters(), lr=1e-5)
         
     def forward(self, x):
@@ -38,4 +41,11 @@ class RerankNet(torch.nn.Module):
 
         # Matrix multiply embeddings to score candidates
         return torch.bmm(mention_embeds, candidate_embeds.permute(0,2,1)).squeeze(1)
+    
+    def dump(self, output_dir, epoch):
+        checkpoint_dir = os.path.join(output_dir, "checkpoint_{}".format(epoch))
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
+        self.encoder.save_pretrained(checkpoint_dir)
+        self.tokenizer.save_pretrained(checkpoint_dir)
     

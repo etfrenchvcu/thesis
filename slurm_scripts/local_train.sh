@@ -16,7 +16,7 @@ PYTORCH_ENABLE_MPS_FALLBACK=1 python train.py \
     --dev_dir ${DEV_DIR} \
     --device "mps" \
     --dictionary_path ${DICTIONARY} \
-    --epochs 1 \
+    --epochs 2 \
     --loss_fn "mse5" \
     --max_length 25 \
     --model_name_or_path ${MODEL_NAME_OR_PATH} \
