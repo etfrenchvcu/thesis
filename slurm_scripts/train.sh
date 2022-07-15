@@ -29,6 +29,12 @@ echo max_length ${MAX_LENGTH}
 echo similarity ${SIMILARITY}
 echo loss_fn ${LOSS_FN}
 
+source /home/etfrench/BioSyn/env/bin/activate
+echo $PATH
+echo $PYTHON_PATH
+which python
+python -V
+
 python train.py \
     --batch_size 16 \
     --candidates 20 \
