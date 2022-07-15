@@ -51,6 +51,10 @@ def main(args):
     # Set loss function
     if args.loss_fn=='nll':
         loss_fn = utils.marginal_nll
+    if args.loss_fn=='mse':
+        loss_fn = utils.mse_loss
+    if args.loss_fn=='mse5':
+        loss_fn = utils.mse5_loss
     else:
         raise Exception(f"Invalid loss function {args.loss_fn}")
         
