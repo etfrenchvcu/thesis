@@ -27,20 +27,18 @@ class RerankNet(nn.Module):
         batch_size, candidates, max_length = candidate_tokens['input_ids'].shape
         
         # Embed mentions
-        mention_tokens = mention_tokens.to(self.device)
         mention_embeds = self.encoder(
-                    input_ids=mention_tokens['input_ids'].squeeze(1),
-                    token_type_ids=mention_tokens['token_type_ids'].squeeze(1),
-                    attention_mask=mention_tokens['attention_mask'].squeeze(1)
+                    input_ids=mention_tokens['input_ids'].squeeze(1).to(self.device),
+                    token_type_ids=mention_tokens['token_type_ids'].squeeze(1).to(self.device),
+                    attention_mask=mention_tokens['attention_mask'].squeeze(1).to(self.device)
         )
         mention_embeds = mention_embeds[0][:,0].unsqueeze(1) # [CLS] embedding for mentions : [batch_size, 1, hidden]
 
         # Embed candidate names
-        candidate_tokens = candidate_tokens.to(self.device)
         candidate_embeds = self.encoder(
-                    input_ids=candidate_tokens['input_ids'].reshape(-1, max_length),
-                    token_type_ids=candidate_tokens['token_type_ids'].reshape(-1, max_length),
-                    attention_mask=candidate_tokens['attention_mask'].reshape(-1, max_length)
+                    input_ids=candidate_tokens['input_ids'].reshape(-1, max_length).to(self.device),
+                    token_type_ids=candidate_tokens['token_type_ids'].reshape(-1, max_length).to(self.device),
+                    attention_mask=candidate_tokens['attention_mask'].reshape(-1, max_length).to(self.device)
         )
         candidate_embeds = candidate_embeds[0][:,0].reshape(batch_size, candidates, -1) # [batch_size, candidates, hidden]
 

@@ -99,11 +99,11 @@ def main(args):
             batch_x, batch_y = data
             batch_pred = model(batch_x)
             loss = loss_fn(batch_pred, batch_y.to(args.device))
-            loss.backward()
+            # loss.backward() #TODO: Not working on the mac
             model.optimizer.step()
             train_loss += loss.item()
             train_steps += 1
-            
+
         train_loss = train_loss / (train_steps + 1e-9)
         LOGGER.info('Epoch {}: loss/train_per_epoch={}/{}'.format(epoch,train_loss,epoch))
         
