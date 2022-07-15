@@ -10,6 +10,7 @@ from transformers import default_data_collator
 # Local modules
 from src.namesDataset import NamesDataset
 
+#region Embedding functions
 def bulk_embed(names, tokenizer, encoder, max_length, device, show_progress=True):
     "Creates BERT embeddings for a bulk list of mention or dictionary names"
     # Tokenize and create dataset
@@ -102,7 +103,9 @@ def bulk_embed_contextualized(mentions, encoder, tokenizer, doc_dir, max_length,
             
     # Concatenate embeddings from all mentions
     return np.concatenate(embeddings, axis=0)
+#endregion
 
+#region Candidate selection
 def get_topk_candidates(dict_names, mentions, tokenizer, encoder, max_length, device, topk, show_progress=True, doc_dir=None):
     "Encodes dictionary and mention names, computes similarity, and returns topk candidates for each mention"
     # Create initial embeddings to identify candidates out of entire dictionary
@@ -136,7 +139,33 @@ def retrieve_candidates(score_matrix, topk):
     topk_idxs = indexing_2d(topk_idxs, topk_argidxs)
 
     return topk_idxs
+#endregion
 
+#region Loss functions
+def marginal_nll(score, target):
+    "Marginal negative log likelihood loss"
+    predict = torch.nn.functional.softmax(score, dim=-1)
+    loss = predict * target
+    loss = loss.sum(dim=-1)                   # sum all positive scores
+    loss = loss[loss > 0]                     # filter sets with at least one positives
+    loss = torch.clamp(loss, min=1e-9, max=1) # for numerical stability
+    loss = -torch.log(loss)                   # for negative log likelihood
+    if len(loss) == 0:
+        loss = loss.sum()                     # will return zero loss
+    else:
+        loss = loss.mean()
+    return loss
+
+def binary_cross_entropy(self, score, similarity):
+    """
+    Binary cross entropy loss. 
+    Ignores candidate scores and focuses on getting the similarity of all candidates as close to 1 as possible.
+    """
+    similarity = similarity.requires_grad_()
+    targets = torch.ones(similarity.shape).to(self.device)
+    return F.binary_cross_entropy(similarity, targets)
+#endregion
+    
 #region Initialization/Data Loading
 def init_seed(seed=None):
     if seed is None:
@@ -191,22 +220,6 @@ def load_mentions(data_dir):
             data.append((mention,cui,offset,file))
     
     return np.array(data)
-#endregion
-
-#region Loss functions
-def marginal_nll(score, target):
-    "Marginal negative log likelihood loss"
-    predict = torch.nn.functional.softmax(score, dim=-1)
-    loss = predict * target
-    loss = loss.sum(dim=-1)                   # sum all positive scores
-    loss = loss[loss > 0]                     # filter sets with at least one positives
-    loss = torch.clamp(loss, min=1e-9, max=1) # for numerical stability
-    loss = -torch.log(loss)                   # for negative log likelihood
-    if len(loss) == 0:
-        loss = loss.sum()                     # will return zero loss
-    else:
-        loss = loss.mean()
-    return loss
 #endregion
 
 #region Evaluation functions

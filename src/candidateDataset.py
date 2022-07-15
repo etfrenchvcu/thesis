@@ -42,10 +42,10 @@ class CandidateDataset(torch.utils.data.Dataset):
         if self.similarity_type=='binary':
             # Binary labels [0,1] for exact CUI matches
             labels = (gold_cui==candidate_cuis).astype(np.float32)
-        elif self.similarity=='linear':
+        elif self.similarity_type=='linear':
             # Float labels (0,1] representing 1/1+dist, where dist is the UMLS distance between gold and candidate CUIs
             labels = [self.umls.similarity(gold_cui, cui) for cui in candidate_cuis]
-        elif self.similarity=='log':
+        elif self.similarity_type=='log':
             # Float labels (0,1] representing 1/e^dist, where dist is the UMLS distance between gold and candidate CUIs
             labels = [self.log_similarity(gold_cui, cui) for cui in candidate_cuis]
         else:

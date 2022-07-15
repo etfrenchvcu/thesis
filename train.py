@@ -1,3 +1,4 @@
+#region imports
 import argparse
 import json
 import os
@@ -14,7 +15,9 @@ from src.candidateDataset import CandidateDataset
 from src.rerankNet import RerankNet
 from src.umls import Umls
 import src.utils as utils
+#endregion
 
+#region parse_args()
 def parse_args():
     "Parse input arguments"
     parser = argparse.ArgumentParser(description='Biomedical Entity Linker')
@@ -34,6 +37,7 @@ def parse_args():
     parser.add_argument('--umls_path', type=str, help='directory containing children.pickle and parents.pickle')
     args = parser.parse_args()
     return args
+#endregion
 
 def main(args):
     # Initialize
@@ -43,17 +47,15 @@ def main(args):
     utils.init_seed(42)
     bert = AutoModel.from_pretrained(args.model_name_or_path).to(args.device)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
-    
+
     # Set loss function
     if args.loss_fn=='nll':
         loss_fn = utils.marginal_nll
     else:
-        raise Exception(f"Invalid loss function {loss_fn}")
-
+        raise Exception(f"Invalid loss function {args.loss_fn}")
+        
     # Build model
-    model = RerankNet(bert, 
-                    device = args.device, 
-                    loss_fn=args.loss_fn)
+    model = RerankNet(bert, device = args.device)
     
     # Load UMLS data
     umls = Umls('umls/processed')
@@ -70,8 +72,6 @@ def main(args):
 
     # Load dev data for validation
     dev_mentions = utils.load_mentions(args.dev_dir)
-    dev_set = CandidateDataset(dev_mentions, dictionary, tokenizer, args.max_length, args.candidates, args.similarity_type, umls) 
-    dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=args.batch_size, shuffle=True)
     LOGGER.info("Mentions loaded")
     
     # Training loop
@@ -99,7 +99,7 @@ def main(args):
             batch_x, batch_y = data
             batch_pred = model(batch_x)
             loss = loss_fn(batch_pred, batch_y.to(args.device))
-            # loss.backward() #TODO: Not working on the mac
+            loss.backward()
             model.optimizer.step()
             train_loss += loss.item()
             train_steps += 1

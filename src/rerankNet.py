@@ -1,19 +1,13 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import logging
 from tqdm import tqdm
 from transformers import AdamW
-LOGGER = logging.getLogger(__name__)
 
 
-class RerankNet(nn.Module):
-    def __init__(self, encoder, device, loss_fn):
+class RerankNet(torch.nn.Module):
+    def __init__(self, encoder, device):
         super(RerankNet, self).__init__()
         self.encoder = encoder
         self.device = device
-        self.loss_fn = loss_fn
         self.optimizer = AdamW(encoder.parameters(), lr=1e-5)
         
     def forward(self, x):
@@ -44,33 +38,4 @@ class RerankNet(nn.Module):
 
         # Matrix multiply embeddings to score candidates
         return torch.bmm(mention_embeds, candidate_embeds.permute(0,2,1)).squeeze(1)
-
-    def get_loss(self, outputs, targets):
-        if self.device != 'cpu':
-            targets = targets.to(self.device)
-        loss = self.loss_fn(self, outputs, targets)
-        return loss
-
-    def get_embeddings(self, mentions, batch_size=1024):
-        """
-        Compute all embeddings from mention tokens.
-        """
-        embedding_table = []
-        with torch.no_grad():
-            for start in tqdm(range(0, len(mentions), batch_size)):
-                end = min(start + batch_size, len(mentions))
-                batch = mentions[start:end]
-                batch_embedding = self.vectorizer(batch)
-                batch_embedding = batch_embedding.cpu()
-                embedding_table.append(batch_embedding)
-        embedding_table = torch.cat(embedding_table, dim=0)
-        return embedding_table
-
-# def binary_cross_entropy(self, score, similarity):
-#     """
-#     Binary cross entropy loss. 
-#     Ignores candidate scores and focuses on getting the similarity of all candidates as close to 1 as possible.
-#     """
-#     similarity = similarity.requires_grad_()
-#     targets = torch.ones(similarity.shape).to(self.device)
-#     return F.binary_cross_entropy(similarity, targets)
+    
