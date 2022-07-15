@@ -13,11 +13,8 @@ class RerankNet(nn.Module):
         super(RerankNet, self).__init__()
         self.encoder = encoder
         self.device = device
-        
+        self.loss_fn = loss_fn
         self.optimizer = AdamW(encoder.parameters(), lr=1e-5)
-        
-        #TODO: pass loss_fn?
-        self.criterion = None #binary_cross_entropy if loss_fn == "bce" else marginal_nll
         
     def forward(self, x):
         """
@@ -53,7 +50,7 @@ class RerankNet(nn.Module):
     def get_loss(self, outputs, targets):
         if self.device != 'cpu':
             targets = targets.to(self.device)
-        loss = self.criterion(self, outputs, targets)
+        loss = self.loss_fn(self, outputs, targets)
         return loss
 
     def get_embeddings(self, mentions, batch_size=1024):
@@ -70,23 +67,6 @@ class RerankNet(nn.Module):
                 embedding_table.append(batch_embedding)
         embedding_table = torch.cat(embedding_table, dim=0)
         return embedding_table
-
-
-# def marginal_nll(self, score, target):
-#     """
-#     sum all scores among positive samples
-#     """
-#     predict = F.softmax(score, dim=-1)
-#     loss = predict * target
-#     loss = loss.sum(dim=-1)                   # sum all positive scores
-#     loss = loss[loss > 0]                     # filter sets with at least one positives
-#     loss = torch.clamp(loss, min=1e-9, max=1) # for numerical stability
-#     loss = -torch.log(loss)                   # for negative log likelihood
-#     if len(loss) == 0:
-#         loss = loss.sum()                     # will return zero loss
-#     else:
-#         loss = loss.mean()
-#     return loss
 
 # def binary_cross_entropy(self, score, similarity):
 #     """

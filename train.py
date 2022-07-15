@@ -29,6 +29,7 @@ def parse_args():
     parser.add_argument('--max_length', default=25, type=int)
     parser.add_argument('--model_name_or_path', required=True, help='Directory for model')
     parser.add_argument('--output_dir', type=str, default='./output/', help='Directory for output')
+    parser.add_argument('--similarity_type', type=str, help='Similarity type for loss calculation')
     parser.add_argument('--train_dir', type=str, required=True, help='path to training dataset')
     parser.add_argument('--umls_path', type=str, help='directory containing children.pickle and parents.pickle')
     args = parser.parse_args()
@@ -43,8 +44,11 @@ def main(args):
     bert = AutoModel.from_pretrained(args.model_name_or_path).to(args.device)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
     
-    # TODO: Loss function?
-    loss_fn = utils.marginal_nll
+    # Set loss function
+    if args.loss_fn=='nll':
+        loss_fn = utils.marginal_nll
+    else:
+        raise Exception(f"Invalid loss function {loss_fn}")
 
     # Build model
     model = RerankNet(bert, 
@@ -61,12 +65,12 @@ def main(args):
 
     # Load training data
     train_mentions = utils.load_mentions(args.train_dir)
-    train_set = CandidateDataset(train_mentions, dictionary, tokenizer, args.max_length, args.candidates) 
+    train_set = CandidateDataset(train_mentions, dictionary, tokenizer, args.max_length, args.candidates, args.similarity_type, umls) 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
 
     # Load dev data for validation
     dev_mentions = utils.load_mentions(args.dev_dir)
-    dev_set = CandidateDataset(dev_mentions, dictionary, tokenizer, args.max_length, args.candidates) 
+    dev_set = CandidateDataset(dev_mentions, dictionary, tokenizer, args.max_length, args.candidates, args.similarity_type, umls) 
     dev_loader = torch.utils.data.DataLoader(dev_set, batch_size=args.batch_size, shuffle=True)
     LOGGER.info("Mentions loaded")
     
@@ -99,7 +103,7 @@ def main(args):
             model.optimizer.step()
             train_loss += loss.item()
             train_steps += 1
-
+            
         train_loss = train_loss / (train_steps + 1e-9)
         LOGGER.info('Epoch {}: loss/train_per_epoch={}/{}'.format(epoch,train_loss,epoch))
         
@@ -119,8 +123,15 @@ def main(args):
         if 'acc1' in results: LOGGER.info("Epoch {}: acc@1={}".format(epoch,results['acc1']))
         if 'acc5' in results: LOGGER.info("Epoch {}: acc@5={}".format(epoch,results['acc5']))
         if 'umls_similarity' in results: LOGGER.info("Epoch {}: umls_similarity={}".format(epoch,results['umls_similarity']))
+
+        # Dump model after each training epoch
+        checkpoint_dir = os.path.join(args.output_dir, "checkpoint_{}".format(epoch))
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
+        bert.save_pretrained(checkpoint_dir)
+        tokenizer.save_pretrained(checkpoint_dir)
         
-    LOGGER.info('Prediction time: ' + utils.format_time(start,time.time()))
+    LOGGER.info('Training time: ' + utils.format_time(start,time.time()))
     
 if __name__ == '__main__':
     args = parse_args()
