@@ -16,7 +16,7 @@ def bulk_embed(names, tokenizer, encoder, max_length, device, show_progress=True
     # Tokenize and create dataset
     name_encodings = tokenizer(names, padding="longest", max_length=max_length, truncation=True, return_tensors="pt").to(device)
     name_dataset = NamesDataset(name_encodings)
-    name_dataloader = torch.utils.data.DataLoader(name_dataset, shuffle=False, collate_fn=default_data_collator, batch_size=1024)
+    name_dataloader = torch.utils.data.DataLoader(name_dataset, shuffle=False, collate_fn=default_data_collator, batch_size=512)
 
     # Create embeddings in batches
     embeds = []
