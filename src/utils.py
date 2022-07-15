@@ -160,7 +160,7 @@ def mse_loss(score, target):
     "Calculates MSE loss between max similarity of the candidates and similarity of top prediction"
     # Find similarity of the top prediction
     pred_ixs = score.argmax(dim=1)
-    predicted_similarity = torch.gather(target, 1, pred_ixs.unsqueeze_(dim=1)).squeeze()
+    predicted_similarity = torch.gather(target, 1, pred_ixs.unsqueeze_(dim=1)).squeeze().requires_grad_()
 
     # Find max similarity for each mention of the available candidates
     expected_similarity = torch.max(target, dim=1).values
@@ -170,15 +170,14 @@ def mse5_loss(score, target):
     "Calculates MSE loss between max similarity for top 5 candidates and similarity of top 5 predictions"
     rows, _ = score.shape
 
-    # Get similarity scores for top 5 predictions
-    top5_pred_ixs = retrieve_candidates(score.detach().cpu(), topk=5)
-    predicted = torch.stack([sum(target[i][top5_pred_ixs[i]]) for i in range(rows)]).requires_grad_()
+    # Sum similarity scores for top 5 predictions
+    top5_pred_ixs = torch.topk(score,5).indices
+    predicted_similarity = torch.gather(target, 1, top5_pred_ixs).sum(dim=1).requires_grad_()
 
-    # Get 5 highest possible similarity scores of the available candidates
-    top5_target_ixs = retrieve_candidates(target, topk=5)
-    expected = torch.stack([sum(target[i][top5_target_ixs[i]]) for i in range(rows)])
+    # Sum 5 highest possible similarity scores of the available candidates
+    expected_similarity = torch.topk(target,5).values.sum(dim=1)
     
-    return torch.nn.functional.mse_loss(expected, predicted)
+    return torch.nn.functional.mse_loss(expected_similarity, predicted_similarity)
 #endregion
     
 #region Initialization/Data Loading

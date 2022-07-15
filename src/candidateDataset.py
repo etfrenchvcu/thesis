@@ -44,10 +44,10 @@ class CandidateDataset(torch.utils.data.Dataset):
             labels = (gold_cui==candidate_cuis).astype(np.float32)
         elif self.similarity_type=='linear':
             # Float labels (0,1] representing 1/1+dist, where dist is the UMLS distance between gold and candidate CUIs
-            labels = [self.umls.similarity(gold_cui, cui) for cui in candidate_cuis]
+            labels = np.array([self.umls.similarity(gold_cui, cui) for cui in candidate_cuis],np.float32)
         elif self.similarity_type=='log':
             # Float labels (0,1] representing 1/e^dist, where dist is the UMLS distance between gold and candidate CUIs
-            labels = [self.log_similarity(gold_cui, cui) for cui in candidate_cuis]
+            labels = np.array([self.log_similarity(gold_cui, cui) for cui in candidate_cuis],np.float32)
         else:
             raise Exception(f"Invalid similarity_type={self.similarity_type}")
         
