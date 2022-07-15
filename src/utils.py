@@ -167,7 +167,11 @@ def mse_loss(score, target):
     return torch.nn.functional.mse_loss(expected_similarity, predicted_similarity)
 
 def mse5_loss(score, target):
-    "Calculates MSE loss between max similarity for top 5 candidates and similarity of top 5 predictions"
+    """
+    Calculates MSE loss between max similarity for top 5 candidates and similarity of top 5 predictions.
+    Since there can be multiple correct predictions, this incentivizes the model to make multiple good
+    predictions, especially in instances where there is one easy candidate in addition to harder ones.
+    """
     rows, _ = score.shape
 
     # Sum similarity scores for top 5 predictions
