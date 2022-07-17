@@ -143,7 +143,7 @@ def retrieve_candidates(score_matrix, topk):
 #endregion
 
 #region Loss functions
-def marginal_nll(score, target):
+def cross_entropy(score, target):
     "Marginal negative log likelihood loss"
     predict = torch.nn.functional.softmax(score, dim=-1)
     loss = predict * target
@@ -157,8 +157,8 @@ def marginal_nll(score, target):
         loss = loss.mean()
     return loss
 
-def similarity_nll(score, target):
-    "Negative log likelihood of predicted similarity matching max candidate similarity"
+def similarity_cross_entropy(score, target):
+    "Modified cross entropy loss to accomodate non-binary labels which may be less than one"
     # Assign probabilities to each candidate
     preds = torch.nn.functional.softmax(score, dim=-1)
 
