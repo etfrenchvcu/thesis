@@ -43,7 +43,7 @@ python train.py \
     --dev_dir ${DEV_DIR} \
     --device "cuda" \
     --dictionary_path ${DICTIONARY} \
-    --epochs 10 \
+    --epochs 30 \
     --loss_fn ${LOSS_FN} \
     --max_length ${MAX_LENGTH} \
     --model_name_or_path ${MODEL_NAME_OR_PATH} \

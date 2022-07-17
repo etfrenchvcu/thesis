@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--dictionary_path', type=str, required=True, help='dictionary path')
     parser.add_argument('--epochs',  type=int, default=10)
-    parser.add_argument('--loss_fn', type=str, default='nll', choices=['nll','mse','mse5'])
+    parser.add_argument('--loss_fn', type=str, default='nll', choices=['nll','similarity_nll','mse','mse5'])
     parser.add_argument('--max_length', default=25, type=int)
     parser.add_argument('--model_name_or_path', required=True, help='Directory for model')
     parser.add_argument('--output_dir', type=str, default='./output/', help='Directory for output')
@@ -52,6 +52,8 @@ def main(args):
     # Set loss function
     if args.loss_fn=='nll':
         loss_fn = utils.marginal_nll
+    elif args.loss_fn=='similarity_nll':
+        loss_fn = utils.similarity_nll
     elif args.loss_fn=='mse':
         loss_fn = utils.mse_loss
     elif args.loss_fn=='mse5':

@@ -157,6 +157,25 @@ def marginal_nll(score, target):
         loss = loss.mean()
     return loss
 
+def similarity_nll(score, target):
+    "Negative log likelihood of predicted similarity matching max candidate similarity"
+    # Assign probabilities to each candidate
+    preds = torch.nn.functional.softmax(score, dim=-1)
+
+    # Aggregate predictions to a single similarity score
+    pred_similarity = torch.sum(preds * target, dim=1)
+
+    # Find max possible similarity given available candidates
+    max_similarity = torch.max(target, dim=1).values
+
+    # Avoid divide by zero in case of candidates all having zero similarity
+    pred_similarity = torch.clamp(pred_similarity, min=1e-9, max=1)
+    max_similarity = torch.clamp(max_similarity, min=1e-9, max=1)
+
+    # Calculate loss out of max_similarity, rather than 1
+    pred_similarity = pred_similarity / max_similarity
+    return -torch.log(pred_similarity).mean()
+
 def mse_loss(score, target):
     """
     Calculates MSE loss between max similarity of the candidates and similarity of top prediction.
