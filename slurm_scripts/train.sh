@@ -20,6 +20,7 @@ OUTPUT_DIR=./tmp/${EXPERIMENT}
 DATA_DIR=./datasets/n2c2
 TRAIN_DIR=${DATA_DIR}/processed_train
 DEV_DIR=${DATA_DIR}/processed_dev
+TEST_DIR=${DATA_DIR}/processed_test
 DICTIONARY=${DATA_DIR}/mrconso_dictionary.txt
 
 echo experiment ${EXPERIMENT}
@@ -48,5 +49,6 @@ python train.py \
     --model_name_or_path ${MODEL_NAME_OR_PATH} \
     --output_dir ${OUTPUT_DIR} \
     --similarity_type ${SIMILARITY} \
+    --test_dir ${TEST_DIR} \
     --train_dir ${TRAIN_DIR} \
     --umls_path ./umls/processed/

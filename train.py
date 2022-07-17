@@ -1,5 +1,7 @@
 #region imports
 import argparse
+import os
+import pandas as pd
 import time
 import torch
 from tqdm import tqdm
@@ -31,6 +33,7 @@ def parse_args():
     parser.add_argument('--model_name_or_path', required=True, help='Directory for model')
     parser.add_argument('--output_dir', type=str, default='./output/', help='Directory for output')
     parser.add_argument('--similarity_type', type=str, help='Similarity type for loss calculation')
+    parser.add_argument('--test_dir', type=str, required=True, help='path to test dataset')
     parser.add_argument('--train_dir', type=str, required=True, help='path to training dataset')
     parser.add_argument('--umls_path', type=str, help='directory containing children.pickle and parents.pickle')
     args = parser.parse_args()
@@ -77,6 +80,7 @@ def main(args):
     LOGGER.info("Mentions loaded")
     
     # Training loop
+    epoch_results = pd.DataFrame([], columns=['acc@1','acc@5','umls_similarity', 'max_acc@1'])
     for epoch in range(args.epochs):
         ############## Candidate Generation ##############
         train_candidate_idxs = utils.get_topk_candidates(
@@ -90,7 +94,8 @@ def main(args):
                             
         # Add candidates to training dataset
         train_set.set_candidate_idxs(train_candidate_idxs)
-        LOGGER.info('Epoch {}: max possible acc@1 = {}'.format(epoch,train_set.max_acc1()))
+        max_acc1 = train_set.max_acc1()
+        LOGGER.info('Epoch {}: max possible acc@1 = {}'.format(epoch,max_acc1))
         
         ###################### Train ######################
         # Train encoder to properly rank candidates
@@ -123,15 +128,61 @@ def main(args):
         
         # Log performance on dev after each epoch
         results = utils.evaluate(dev_mentions, dictionary[dev_candidate_idxs], umls)
-        if 'acc1' in results: LOGGER.info("Epoch {}: acc@1={}".format(epoch,results['acc1']))
-        if 'acc5' in results: LOGGER.info("Epoch {}: acc@5={}".format(epoch,results['acc5']))
-        if 'umls_similarity' in results: LOGGER.info("Epoch {}: umls_similarity={}".format(epoch,results['umls_similarity']))
+        epoch_results.loc[epoch] = (results['acc1'], results['acc5'], results['umls_similarity'], max_acc1)
+        LOGGER.info("Epoch {}: acc@1={}".format(epoch,results['acc1']))
+        LOGGER.info("Epoch {}: acc@5={}".format(epoch,results['acc5']))
+        LOGGER.info("Epoch {}: umls_similarity={}".format(epoch,results['umls_similarity']))
 
         # Dump model after each training epoch
         model.dump(args.output_dir, epoch)
-        
-    LOGGER.info('Training time: ' + utils.format_time(start,time.time()))
     
+    # Training loop complete
+    LOGGER.info('Training time: ' + utils.format_time(start,time.time()))
+    LOGGER.info(f'\n{epoch_results.round(3)}')
+    
+    
+    
+    ###################### Predict ######################
+    # Evaluate on test data using best training model
+    best_epoch = epoch_results.umls_similarity.argmax()
+    train_model_path = os.path.join(args.output_dir, "checkpoint_{}".format(best_epoch))
+    LOGGER.info(f'Loading epoch {best_epoch} model from {train_model_path}')
+    
+    # Evaluate on test data using best training model
+    start = time.time()
+    best_epoch = epoch_results.umls_similarity.argmax()
+    train_model_path = os.path.join(args.output_dir, "checkpoint_{}".format(best_epoch))
+    LOGGER.info(f'Loading epoch {best_epoch} model from {train_model_path}')
+
+    # Load training model
+    train_bert = AutoModel.from_pretrained(train_model_path).to(args.device)
+    train_tokenizer = AutoTokenizer.from_pretrained(train_model_path)
+
+    # Load test mentions
+    test_mentions = utils.load_mentions(args.test_dir)
+
+    # Predict topk=5 candidates
+    candidate_idxs = utils.get_topk_candidates(
+            dict_names=list(dictionary[:,0]), 
+            mentions=test_mentions, 
+            tokenizer=train_tokenizer, 
+            encoder=train_bert, 
+            max_length=args.max_length, 
+            device=args.device, 
+            topk=5, # Only need top five candidates to evaluate performance
+            doc_dir=None) # Update to allow contextualized embeddings
+
+    # Log performance
+    results = utils.evaluate(test_mentions, dictionary[candidate_idxs], umls)
+    LOGGER.info("Test result: acc@1={}".format(results['acc1']))
+    LOGGER.info("Test result: acc@5={}".format(results['acc5']))
+    LOGGER.info("Test result: umls_similarity={}".format(results['umls_similarity']))
+
+    LOGGER.info('Prediction time: ' + utils.format_time(start,time.time()))
+
+    # Write output
+    utils.dump_predictions(args.output_dir, results)
+
 if __name__ == '__main__':
     args = parse_args()
     main(args)

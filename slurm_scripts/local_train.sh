@@ -6,6 +6,7 @@ OUTPUT_DIR=./tmp/local
 DATA_DIR=./datasets/development
 TRAIN_DIR=${DATA_DIR}/processed_dev
 DEV_DIR=${DATA_DIR}/processed_dev
+TEST_DIR=${DATA_DIR}/processed_dev
 DICTIONARY=${DATA_DIR}/dev_dictionary.txt
 
 start_time="$(date -u +%s)"
@@ -22,6 +23,7 @@ PYTORCH_ENABLE_MPS_FALLBACK=1 python train.py \
     --model_name_or_path ${MODEL_NAME_OR_PATH} \
     --output_dir ${OUTPUT_DIR} \
     --similarity_type "linear" \
+    --test_dir ${TEST_DIR} \
     --train_dir ${TRAIN_DIR} \
     --umls_path ./umls/processed/
 end_time="$(date -u +%s)"

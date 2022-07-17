@@ -1,4 +1,5 @@
 import glob
+import json
 import logging
 import numpy as np
 import os
@@ -147,7 +148,7 @@ def marginal_nll(score, target):
     predict = torch.nn.functional.softmax(score, dim=-1)
     loss = predict * target
     loss = loss.sum(dim=-1)                   # sum all positive scores
-    loss = loss[loss > 0]                     # filter sets with at least one positives
+    loss = loss[loss > 0]                     # drop predictions which didn't have gold_cui available in the candidates
     loss = torch.clamp(loss, min=1e-9, max=1) # for numerical stability
     loss = -torch.log(loss)                   # for negative log likelihood
     if len(loss) == 0:
@@ -317,4 +318,11 @@ def format_time(start, end):
     minute = int(time/60 % 60)
     second = int(time % 60)
     return "{} hours {} minutes {} seconds".format(hour, minute, second)
+
+def dump_predictions(output_dir, results):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    output_file = os.path.join(output_dir,"predictions_eval.json")
+    with open(output_file, 'w') as f:
+        json.dump(results, f, indent=2)
 #endregion

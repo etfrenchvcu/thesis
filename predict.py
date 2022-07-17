@@ -62,7 +62,7 @@ def main(args):
             topk=args.candidates,
             doc_dir=doc_dir)
     
-    # Log performance on dev after each epoch
+    # Log performance
     results = utils.evaluate(mentions, dictionary[candidate_idxs], umls)
     if 'acc1' in results: LOGGER.info("Result: acc@1={}".format(results['acc1']))
     if 'acc5' in results: LOGGER.info("Result: acc@5={}".format(results['acc5']))

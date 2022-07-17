@@ -1,7 +1,6 @@
 import os
 import torch
 from tqdm import tqdm
-from transformers import AdamW
 
 
 class RerankNet(torch.nn.Module):
@@ -11,7 +10,7 @@ class RerankNet(torch.nn.Module):
         self.device = device
         self.tokenizer = tokenizer
         
-        self.optimizer = AdamW(encoder.parameters(), lr=1e-5)
+        self.optimizer = torch.optim.AdamW(encoder.parameters(), lr=1e-5)
         
     def forward(self, x):
         """
