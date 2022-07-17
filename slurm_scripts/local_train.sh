@@ -19,6 +19,7 @@ PYTORCH_ENABLE_MPS_FALLBACK=1 python train.py \
     --dictionary_path ${DICTIONARY} \
     --epochs 2 \
     --loss_fn "sce" \
+    --lr 1e-5 \
     --max_length 25 \
     --model_name_or_path ${MODEL_NAME_OR_PATH} \
     --output_dir ${OUTPUT_DIR} \

@@ -8,8 +8,6 @@ from transformers import (
 )
 
 # Local modules
-from src.candidateDataset import CandidateDataset
-from src.rerankNet import RerankNet
 from src.umls import Umls
 import src.utils as utils
 

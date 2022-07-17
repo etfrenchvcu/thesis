@@ -14,7 +14,8 @@ CONTEXTUALIZED=$2
 MAX_LENGTH=$3
 SIMILARITY=$4
 LOSS_FN=$5
-EXPERIMENT=$6
+LR=$6
+EXPERIMENT=$7
 
 OUTPUT_DIR=./tmp/${EXPERIMENT}
 DATA_DIR=./datasets/n2c2
@@ -29,6 +30,7 @@ echo contextualized ${CONTEXTUALIZED}
 echo max_length ${MAX_LENGTH}
 echo similarity ${SIMILARITY}
 echo loss_fn ${LOSS_FN}
+echo learning_rate ${LR}
 
 source /home/etfrench/BioSyn/env/bin/activate
 echo $PATH
@@ -45,6 +47,7 @@ python train.py \
     --dictionary_path ${DICTIONARY} \
     --epochs 30 \
     --loss_fn ${LOSS_FN} \
+    --lr ${LR} \
     --max_length ${MAX_LENGTH} \
     --model_name_or_path ${MODEL_NAME_OR_PATH} \
     --output_dir ${OUTPUT_DIR} \

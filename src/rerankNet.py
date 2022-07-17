@@ -4,13 +4,13 @@ from tqdm import tqdm
 
 
 class RerankNet(torch.nn.Module):
-    def __init__(self, encoder, tokenizer, device):
+    def __init__(self, encoder, tokenizer, lr, device):
         super(RerankNet, self).__init__()
         self.encoder = encoder
         self.device = device
         self.tokenizer = tokenizer
         
-        self.optimizer = torch.optim.AdamW(encoder.parameters(), lr=1e-5)
+        self.optimizer = torch.optim.AdamW(encoder.parameters(), lr=lr)
         
     def forward(self, x):
         """

@@ -29,6 +29,7 @@ def parse_args():
     parser.add_argument('--dictionary_path', type=str, required=True, help='dictionary path')
     parser.add_argument('--epochs',  type=int, default=10)
     parser.add_argument('--loss_fn', type=str, required=True, choices=['ce','sce'])
+    parser.add_argument('--lr',  type=float, default=1e-5)
     parser.add_argument('--max_length', default=25, type=int)
     parser.add_argument('--model_name_or_path', required=True, help='Directory for model')
     parser.add_argument('--output_dir', type=str, default='./output/', help='Directory for output')
@@ -58,7 +59,10 @@ def main(args):
         raise Exception(f"Invalid loss function {args.loss_fn}")
         
     # Build model
-    model = RerankNet(encoder=bert, tokenizer=tokenizer, device=args.device)
+    model = RerankNet(encoder=bert, 
+                      tokenizer=tokenizer,
+                      lr=args.lr,
+                      device=args.device)
     
     # Load UMLS data
     umls = Umls('umls/processed')
