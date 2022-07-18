@@ -84,8 +84,9 @@ def main(args):
         the highest similarity between exact mention matches. These training
         examples will only confuse the training.
         """
-        consistent_mask = [umls.check_consistent(name,cui) for name,cui in train_mentions[:,:2]]
-        LOGGER.info(f"Dropping {sum(consistent_mask)} out of {len(train_mentions)} training records because of inconsistent exact mappings between annotation and dictionary CUIs")
+        name_cuis = utils.load_name_cuis(dictionary)
+        consistent_mask = [utils.check_consistent(name_cuis, name,cui) for name,cui in train_mentions[:,:2]]
+        LOGGER.info(f"Dropping {len(train_mentions)-sum(consistent_mask)} out of {len(train_mentions)} training records because of inconsistent exact mappings between annotation and dictionary CUIs")
         train_mentions = train_mentions[consistent_mask]
     train_set = CandidateDataset(train_mentions, dictionary, model.tokenizer, args.max_length, args.candidates, args.similarity_type, umls) 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True)

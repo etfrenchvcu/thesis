@@ -2,6 +2,7 @@ tmp
 datasets
 results
 .DS_Store
+umls/processed/name_cuis.pickle
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -131,8 +132,4 @@ venv.bak/
 dmypy.json
 
 # Pyre type checker
-<<<<<<< HEAD
 .pyre/
-=======
-.pyre/
->>>>>>> 177f51b9d318ea7bb4ec2a568df87763034806fc

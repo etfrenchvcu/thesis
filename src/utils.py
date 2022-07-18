@@ -269,6 +269,31 @@ def load_mentions(data_dir):
     return np.array(data)
 #endregion
 
+# region CUI comparisons
+def load_name_cuis(dictionary):
+    "Loads a dictionary of names to CUIs"
+    name_cuis = {}
+    for name, cui in dictionary:
+        name = name.lower()
+        if name in name_cuis:
+            name_cuis[name] = name_cuis[name].union(set([cui]))
+        else:
+            name_cuis[name] = set([cui])
+    return name_cuis
+
+def check_consistent(name_cuis, name, gold_cui):
+    "Checks if the given name is consistently mapped to the gold CUI"
+    if name not in name_cuis:
+        # Name is not in the dictionary
+        return True
+    if len(name_cuis[name])==1 and next(iter(name_cuis[name]))==gold_cui:
+        # Name maps exactly to correct CUI
+        return True
+    else:
+        # Name maps to multiple CUIs or incorrect CUI
+        return False
+#endregion
+
 #region Evaluation functions
 def log_topk(eval_mentions, candidates):
     "Creates a results dictionary containing the names, cuis, and label for all predicted candidates for each mention"

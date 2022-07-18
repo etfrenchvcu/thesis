@@ -46,21 +46,6 @@ class Umls():
         with open(f'{path}/parents.pickle', 'rb') as f:
             self.parents = pickle.load(f)
 
-        with open(f'{path}/name_cuis.pickle', 'rb') as f:
-            self.name_cuis = pickle.load(f)
-
-    def check_consistent(self, name, gold_cui):
-        "Checks if the given name is consistently mapped to the gold CUI"
-        if name not in self.name_cuis:
-            # Name is not in the dictionary
-            return True
-        if len(self.name_cuis[name])==1 and next(iter(self.name_cuis[name]))==gold_cui:
-            # Name maps exactly to correct CUI
-            return True
-        else:
-            # Name maps to multiple CUIs or incorrect CUI
-            return False
-
     def get_candidates(self, cui:str, k:int):
         "Returns k ontological candidates for the specified CUI"
         candidates = set()
