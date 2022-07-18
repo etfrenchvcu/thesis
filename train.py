@@ -74,20 +74,16 @@ def main(args):
 
     # Load training data
     train_mentions = utils.load_mentions(args.train_dir)
-    if True:
-        # TODO: Make this a configuration option if it works
-        """
-        Drop training records where:
-            1) The exact mention is mapped to multiple CUIs in the dictionary
-            2) The exact mention is mapped to CUI that is not the gold CUI
-        Since encodings are non-contextualized, the network will always predict
-        the highest similarity between exact mention matches. These training
-        examples will only confuse the training.
-        """
-        name_cuis = utils.load_name_cuis(dictionary)
-        consistent_mask = [utils.check_consistent(name_cuis, name,cui) for name,cui in train_mentions[:,:2]]
-        LOGGER.info(f"Dropping {len(train_mentions)-sum(consistent_mask)} out of {len(train_mentions)} training records because of inconsistent exact mappings between annotation and dictionary CUIs")
-        train_mentions = train_mentions[consistent_mask]
+    """
+    Drop training records where the exact mention is mapped to a single CUI that is not the gold CUI
+    Since encodings are non-contextualized, the network will always predict
+    the highest similarity between exact mention matches. These training
+    examples will only confuse the training.
+    """
+    name_cuis = utils.load_name_cuis(dictionary)
+    consistent_mask = [utils.check_consistent(name_cuis, name,cui) for name,cui in train_mentions[:,:2]]
+    LOGGER.info(f"Dropping {len(train_mentions)-sum(consistent_mask)} out of {len(train_mentions)} training records because of inconsistent exact mappings between annotation and dictionary CUIs")
+    train_mentions = train_mentions[consistent_mask]
     train_set = CandidateDataset(train_mentions, dictionary, model.tokenizer, args.max_length, args.candidates, args.similarity_type, umls) 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
 

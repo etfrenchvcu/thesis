@@ -286,12 +286,12 @@ def check_consistent(name_cuis, name, gold_cui):
     if name not in name_cuis:
         # Name is not in the dictionary
         return True
-    if len(name_cuis[name])==1 and next(iter(name_cuis[name]))==gold_cui:
-        # Name maps exactly to correct CUI
-        return True
+    if len(name_cuis[name])==1 and next(iter(name_cuis[name]))!=gold_cui:
+        # Name maps exactly to a single incorrect CUI
+        return False
     else:
         # Name maps to multiple CUIs or incorrect CUI
-        return False
+        return True
 #endregion
 
 #region Evaluation functions
