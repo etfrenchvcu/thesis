@@ -270,6 +270,19 @@ def load_mentions(data_dir):
 #endregion
 
 # region CUI comparisons
+def remove_inconsistent(mentions, dictionary):
+    """
+    Drop training records where the exact mention is mapped to a single CUI that is not the gold CUI
+    Since encodings are non-contextualized, the network will always predict
+    the highest similarity between exact mention matches. These training
+    examples will only confuse the training.
+    NOTE: This didn't actually help performance.
+    """
+    name_cuis = load_name_cuis(dictionary)
+    consistent_mask = [check_consistent(name_cuis, name,cui) for name,cui in mentions[:,:2]]
+    print(f"Dropping {len(mentions)-sum(consistent_mask)} out of {len(mentions)} training records because of inconsistent exact mappings between annotation and dictionary CUIs")
+    return mentions[consistent_mask]
+
 def load_name_cuis(dictionary):
     "Loads a dictionary of names to CUIs"
     name_cuis = {}
