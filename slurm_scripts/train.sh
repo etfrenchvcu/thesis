@@ -45,7 +45,7 @@ python train.py \
     --dev_dir ${DEV_DIR} \
     --device "cuda" \
     --dictionary_path ${DICTIONARY} \
-    --epochs 30 \
+    --epochs 50 \
     --loss_fn ${LOSS_FN} \
     --lr ${LR} \
     --max_length ${MAX_LENGTH} \
